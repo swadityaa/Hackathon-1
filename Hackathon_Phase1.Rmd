@@ -1,0 +1,93 @@
+---
+title: "Hackathon Phase 1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+##1. Attached is a 'sample data' and below are the features of the data. Review the sample data (Model_Data_sample.csv) and the description below. Build an understanding of the data and plan your approach to build a model
+```{r 1.Read the csv file}
+data=read.csv("H_data.csv",header = TRUE)
+summary(data)
+nrow(data)
+```
+2. Define your data exploration, imputation and visualization approach.
+```{r 2.DATA IMPUTATION}
+#Data Imputation is done in excel file for the attributes 'workclass','occupation','native country' and 'salary' which had missing or inappropriate values
+#The former 3 rows had '?' which was replaced with the 'unknown' category
+#salary class had 4 labels of which two were repetitive. Hence, it was replaced with <=50k >50k appropriately
+
+```
+##4. Set seed for sampling (your roll number)
+##5. Split model data into train (80%) and test (20%)
+##6. Build 3 Models, each using one of different type of algorithm
+In the Feature selection:
+fnlwgt, relationship, race and native_country does not produce any significant raise in the accuracy level as they have a very low correlation in predicting the salary label.
+capital_loss has only a minimum ratio of values and hence, it is not selected.
+
+```{r DECISION TREE MODEL}
+library(tree)
+set.seed(01)
+sample=sample.int(n=nrow(data),size = floor(0.8*nrow(data)),replace = F)
+tree_train=data[sample,]
+tree_test=data[-sample,]
+tree_model=tree(salary~age+workclass+education+marital_status+occupation+sex+capital_gain+hours_per_week, data=tree_train)
+#plot(tree_train)
+#text(tree_train)
+mod_pred=predict(tree_model,tree_test)
+maxidx1=function(arr){
+  return(which(arr==max(arr)))
+}
+idx1=apply(mod_pred, c(1),maxidx1)
+modpred=c('<=50K','>50K')[idx1]
+confmat=table(modpred,tree_test$salary)
+confmat
+accuracy=sum(diag(confmat))/sum(confmat)
+accuracy
+```
+
+
+```{r Naive Bayes MODEL}
+library(e1071)
+set.seed(01)
+sample=sample.int(n=nrow(data),size = floor(0.8*nrow(data)),replace = F)
+nb_train=data[sample,]
+nb_test=data[-sample,]
+nb_model=naiveBayes(salary~age+workclass+education+marital_status+occupation +sex +capital_gain + hours_per_week,data=nb_train)
+pred=predict(nb_model,nb_test[,-15])
+#pred
+n_confmat=table(pred,nb_test$salary)
+n_confmat
+accur=sum(diag(n_confmat))/sum(n_confmat)
+accur
+```
+
+```{r KNN MODEL}
+library(class)
+set.seed(01)
+for(i in 1:14){
+  data[,i]=as.numeric(data[,i])
+}
+sample=sample.int(n=nrow(data),size = floor(0.8*nrow(data)),replace = F)
+s=c(1,2,4,6,7,10,11,13)
+k_train = data[sample,s]
+k_test = data[-sample,s]
+k_train_label=data[sample, 15]
+k_test_label= data[-sample,15]
+
+k=7
+pred_label=knn(train = k_train,test=k_test,cl=k_train_label,k)
+k_confmat=table(k_test_label,pred_label)
+k_confmat
+k_accuracy=sum(diag(k_confmat))/sum(k_confmat)
+k_accuracy
+```
+## 8. GENERALIZATION
+The selected features for building all three models does not underfit and overfit the model and so it appears to be a generalised model.
+      
+      Of all the 3 models KNN is found to have the maximum accuracy of 83.6% and is identified to be the ideal model for classifying the given set of data
+```
+
+
